@@ -119,8 +119,8 @@ docker-compose --env-file .env.dev up -d
 |----------|-----|
 | **Frontend** | http://localhost |
 | **API REST** | http://localhost:8080/api/v1 |
-| **Swagger UI** | http://localhost:8080/swagger-ui.html |
-| **pgAdmin** | http://localhost:5050 |
+| **Health Check Backend** | http://localhost:8080/actuator/health |
+| **pgAdmin (opcional)** | http://localhost:5050 |
 
 **Credenciales por defecto:**
 - PostgreSQL: `postgres` / `postgres`
@@ -161,17 +161,15 @@ docker-compose --env-file .env.dev up -d
   - Health checks automáticos
   - Inicialización automática con init-db.sql
 
-### pgAdmin (Gestor de BD)
+### pgAdmin (Gestor de BD - Opcional)
 - **Puerto**: 5050
 - **URL**: http://localhost:5050
 - **Email**: admin@nuevaeps.com
 - **Contraseña**: admin
 - **Características**:
-  - Interfaz web profesional
-  - Gestión completa de PostgreSQL
-  - Crear/modificar tablas
-  - Ejecutar consultas SQL
-  - Importar/exportar datos
+  - Interfaz web profesional (opcional)
+  - Gestión de PostgreSQL
+  - Útil para revisar datos manualmente
 
 ---
 
@@ -263,16 +261,16 @@ nuevaeps/
                   │
         ┌─────────▼──────────┐
         │  Frontend (React)  │  (Puerto 80)
-        │  - TypeScript      │
-        │  - Vite            │
-        │  - Nginx           │
+        │  - TypeScript 5.2  │
+        │  - Vite 5.0        │
+        │  - Nginx Alpine    │
         └────────┬───────────┘
                  │ (Proxy http://backend:8080/api)
         ┌────────▼────────────────────────┐
         │    Backend (Spring Boot 3.2)    │  (Puerto 8080)
-        │    - Java 21                    │
-        │    - JWT Auth                   │
-        │    - REST API + Swagger         │
+        │    - Java 21 LTS                │
+        │    - JWT Auth (HS384)           │
+        │    - REST API JSON              │
         └────────┬────────────────────────┘
                  │
         ┌────────▼────────────┐
@@ -285,7 +283,7 @@ nuevaeps/
 
     ┌──────────────────────────┐
     │  pgAdmin                 │  (Puerto 5050)
-    │  (Gestión BD)            │
+    │  (Gestión BD - opcional) │
     └──────────────────────────┘
 ```
 
@@ -321,83 +319,61 @@ nuevaeps/
 
 ### Base de Datos - Schema
 
-#### Tabla: usuarios
-```sql
-├── id (PK, UUID)
-├── username (UNIQUE)
-├── email (UNIQUE)
-├── password (bcrypt)
-├── created_at
-└── updated_at
-```
+La base de datos se inicializa automáticamente mediante el script [init-db.sql](init-db.sql) que se ejecuta cuando PostgreSQL inicia por primera vez.
 
-#### Tabla: medicamentos
-```sql
-├── id (PK, UUID)
-├── nombre
-├── descripcion
-├── dosis
-├── presentacion
-├── stock
-└── precio
-```
+**Para detalles completos sobre las tablas, campos y relaciones, ver:**
+👉 **[nuevaeps-backend/README.md → Base de Datos](nuevaeps-backend/README.md#-base-de-datos)**
 
-#### Tabla: solicitud_medicamento
-```sql
-├── id (PK, UUID)
-├── usuario_id (FK → usuarios)
-├── medicamento_id (FK → medicamentos)
-├── cantidad_solicitada
-├── estado (PENDIENTE/APROBADO/RECHAZADO)
-├── fecha_solicitud
-└── observaciones
-```
+Las tablas principales incluyen:
+- **usuarios** - Credenciales de usuario (username, password)
+- **medicamentos** - Catálogo de medicamentos disponibles
+- **solicitudes_medicamentos** - Registro de solicitudes con datos de entrega
 
 ### Flujo de Autenticación JWT
 
 #### 1. Registro
 ```
-POST /api/auth/register
+POST /api/v1/auth/register
 ├── Body: { username, email, password, confirmPassword }
 ├── Validación: password == confirmPassword
-├── Hash: bcrypt (fuerza 10)
-├── Response: { id, username, email, token }
-└── Token: JWT con expiración
+├── Hash: bcrypt automático
+├── Response: { id, username, email }
+└── Nota: No devuelve token, usuario debe hacer login
 ```
 
 #### 2. Login
 ```
-POST /api/auth/login
+POST /api/v1/auth/login
 ├── Body: { username, password }
-├── Validación: credenciales en BD
+├── Validación: credenciales contra BD
 ├── Token JWT: { sub: username, exp: +24h, iat: now }
-├── Response: { token, username }
-└── Frontend: localStorage.setItem('token')
+├── Response: { accessToken, username, userId }
+├── Frontend: localStorage.setItem('token', accessToken)
+└── Algoritmo: HS384 (HMAC SHA-384)
 ```
 
 #### 3. Acceso a Recursos Protegidos
 ```
-GET /api/medicamentos
-├── Header: Authorization: Bearer <JWT>
-├── Filtro: AuthTokenFilter extrae token
+GET /api/v1/medicamentos
+├── Header: Authorization: Bearer <accessToken>
+├── Filtro: AuthTokenFilter extrae y valida token
 ├── Validación: JWT válido + no expirado
 ├── Response: [medicamentos] o 401 Unauthorized
-└── Frontend: axios interceptor agrega header automáticamente
+└── Frontend: Axios interceptor agrega header automáticamente
 ```
 
 ### Ciclo de Vida Startup
 
-1. **PostgreSQL** inicia y espera health check
-2. **pgAdmin** inicia cuando PostgreSQL está "healthy"
-3. **Backend** inicia cuando PostgreSQL está "healthy"
-   - Ejecuta migrations
+1. **PostgreSQL** inicia y espera health check (~3s)
+2. **pgAdmin** inicia cuando PostgreSQL está "healthy" (opcional)
+3. **Backend** inicia cuando PostgreSQL está "healthy" (~5-10s)
+   - Crea tablas automáticamente con Hibernate DDL
    - Conecta a BD
-   - Carga credenciales de seguridad
-4. **Frontend** inicia cuando Backend está disponible
-   - Build con Vite
+   - Carga configuración de seguridad JWT
+4. **Frontend** inicia cuando Backend está disponible (~10-15s)
+   - Build con Vite (~9s)
    - Nginx inicia con proxy hacia Backend
-5. **Toda la aplicación** está lista
-- **Makefile**: Automatización
+5. **Aplicación completa lista** - Acceso via http://localhost
 
 ---
 
@@ -702,21 +678,32 @@ npm run dev
 
 #### Backend
 1. Edita código en `nuevaeps-backend/src/`
-2. Reconstruye:
+2. Reconstruye imagen:
    ```bash
    docker-compose build backend
    ```
-3. Reinicia:
+3. Reinicia contenedor:
    ```bash
    docker-compose up -d backend
+   ```
+4. Verifica logs:
+   ```bash
+   docker-compose logs -f backend
    ```
 
 #### Frontend
 1. Edita código en `nuevaeps-frontend/src/`
-2. Reconstruye:
+2. Reconstruye imagen:
    ```bash
    docker-compose build frontend
+   ```
+3. Reinicia contenedor:
+   ```bash
    docker-compose up -d frontend
+   ```
+4. Verifica logs:
+   ```bash
+   docker-compose logs -f frontend
    ```
 
 ### Validar Cambios
@@ -733,12 +720,22 @@ npm run lint
 npm run build
 ```
 
-### Git Hooks
+### Testing
 
-Cada repositorio (backend y frontend) tiene sus propios Git hooks configurados:
+#### Backend (Maven + JUnit)
+```bash
+cd nuevaeps-backend
+mvn test              # Ejecutar todos los tests
+mvn test -Dtest=AuthControllerTest  # Test específico
+```
 
-- **Backend**: Hook pre-commit que ejecuta `mvn test` antes de cada commit
-- Ver [nuevaeps-backend/README.md](nuevaeps-backend/README.md) para instrucciones de instalación
+#### Frontend (Vitest)
+```bash
+cd nuevaeps-frontend
+npm test              # Ejecutar todos los tests
+npm run test:watch    # Modo watch
+npm run test:coverage # Con reporte de cobertura
+```
 
 
 
@@ -883,9 +880,11 @@ docker-compose up -d
 
 ## 📚 Documentación Adicional
 
-- **[00-START-HERE.txt](00-START-HERE.txt)** - Guía visual de inicio
-- **[nuevaeps-backend/README.md](nuevaeps-backend/README.md)** - Documentación backend
-- **[nuevaeps-frontend/README.md](nuevaeps-frontend/README.md)** - Documentación frontend
+- **[00-START-HERE.txt](00-START-HERE.txt)** - Guía rápida de inicio
+- **[nuevaeps-backend/README.md](nuevaeps-backend/README.md)** - API endpoints, JWT, testing
+- **[nuevaeps-frontend/README.md](nuevaeps-frontend/README.md)** - Estructura React, componentes, routing
+- **[docker-compose.yml](docker-compose.yml)** - Configuración de servicios
+- **[init-db.sql](init-db.sql)** - Datos iniciales de medicamentos
 
 ---
 
@@ -922,4 +921,4 @@ docker-compose up -d
 
 ---
 
-**Versión**: 1.0.0 | **Última actualización**: 28 de enero de 2026 | **Estado**: ✅ Listo para usar
+**Versión**: 1.0.0 | **Última actualización**: 29 de enero de 2026 | **Estado**: ✅ Totalmente funcional
