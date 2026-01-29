@@ -14,13 +14,14 @@ Sistema completo de gestión de solicitudes de medicamentos con **Frontend React
 4. [Servicios Disponibles](#-servicios-disponibles)
 5. [Estructura del Proyecto](#-estructura-del-proyecto)
 6. [Tecnologías](#-tecnologías)
-7. [Requisitos](#requisitos)
-8. [Instalación](#instalación)
-9. [Comandos](#-comandos-y-operaciones)
-10. [Base de Datos](#-configuración-de-base-de-datos)
-11. [pgAdmin](#-configuración-de-pgadmin)
-12. [Desarrollo](#-desarrollo)
-13. [Solución de Problemas](#-solución-de-problemas)
+7. [Arquitectura del Sistema](#-arquitectura-del-sistema)
+8. [Requisitos](#requisitos)
+9. [Instalación](#instalación)
+10. [Comandos](#-comandos-y-operaciones)
+11. [Base de Datos](#-configuración-de-base-de-datos)
+12. [pgAdmin](#-configuración-de-pgadmin)
+13. [Desarrollo](#-desarrollo)
+14. [Solución de Problemas](#-solución-de-problemas)
 
 ---
 
@@ -50,17 +51,46 @@ Este proyecto utiliza una **arquitectura de múltiples repositorios**:
 
 ### Clonar el Proyecto Completo
 
-Ver [CLONE.md](CLONE.md) para instrucciones detalladas sobre cómo clonar todos los repositorios.
+#### Opción 1: Clonar Repositorios Manualmente
 
-**Resumen rápido:**
 ```bash
-# 1. Clonar repositorio principal
-git clone <url-principal> nuevaeps
+# 1. Clonar el repositorio principal
+git clone <url-repositorio-principal> nuevaeps
 cd nuevaeps
 
-# 2. Clonar backend y frontend
-git clone <url-backend> nuevaeps-backend
-git clone <url-frontend> nuevaeps-frontend
+# 2. Clonar el backend
+git clone <url-repositorio-backend> nuevaeps-backend
+
+# 3. Clonar el frontend
+git clone <url-repositorio-frontend> nuevaeps-frontend
+```
+
+#### Opción 2: Usar Git Submodules (Recomendado)
+
+Si decides convertir los repositorios en submódulos:
+
+```bash
+# 1. Clonar el repositorio principal
+git clone <url-repositorio-principal> nuevaeps
+cd nuevaeps
+
+# 2. Agregar submódulos
+git submodule add <url-repositorio-backend> nuevaeps-backend
+git submodule add <url-repositorio-frontend> nuevaeps-frontend
+
+# 3. Commit los submódulos
+git add .gitmodules nuevaeps-backend nuevaeps-frontend
+git commit -m "Agregar submódulos backend y frontend"
+git push
+```
+
+**Clonar proyecto con submódulos:**
+```bash
+# Clonar incluyendo submódulos
+git clone --recurse-submodules <url-repositorio-principal>
+
+# O si ya clonaste sin submódulos:
+git submodule update --init --recursive
 ```
 
 ---
@@ -219,6 +249,154 @@ nuevaeps/
 ### DevOps
 - **Docker**: Containerización
 - **Docker Compose**: Orquestación
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+### Diagrama General
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     INTERNET                            │
+└─────────────────┬───────────────────────────────────────┘
+                  │
+        ┌─────────▼──────────┐
+        │  Frontend (React)  │  (Puerto 80)
+        │  - TypeScript      │
+        │  - Vite            │
+        │  - Nginx           │
+        └────────┬───────────┘
+                 │ (Proxy http://backend:8080/api)
+        ┌────────▼────────────────────────┐
+        │    Backend (Spring Boot 3.2)    │  (Puerto 8080)
+        │    - Java 21                    │
+        │    - JWT Auth                   │
+        │    - REST API + Swagger         │
+        └────────┬────────────────────────┘
+                 │
+        ┌────────▼────────────┐
+        │   PostgreSQL 16     │  (Puerto 5432)
+        │   - nuevaeps_db     │
+        │   - Usuarios        │
+        │   - Medicamentos    │
+        │   - Solicitudes     │
+        └─────────────────────┘
+
+    ┌──────────────────────────┐
+    │  pgAdmin                 │  (Puerto 5050)
+    │  (Gestión BD)            │
+    └──────────────────────────┘
+```
+
+### Servicios Docker
+
+#### 1. PostgreSQL (Database)
+- **Imagen**: `postgres:16-alpine`
+- **Puerto**: 5432
+- **Usuario**: postgres
+- **Base de datos**: nuevaeps_db
+- **Volúmenes**: postgres_data
+- **Healthcheck**: pg_isready
+
+#### 2. Backend API (Spring Boot)
+- **Imagen**: Custom (Dockerfile multietapa)
+- **Puerto**: 8080
+- **Java**: 21 LTS
+- **Base**: eclipse-temurin:21-jre-alpine
+- **Perfil**: `dev` (configurable)
+- **Healthcheck**: java -version
+
+#### 3. Frontend (React + Nginx)
+- **Imagen**: Custom (Dockerfile multietapa)
+- **Puerto**: 80
+- **Build**: Vite
+- **Proxy**: Nginx → Backend API
+- **Healthcheck**: wget http://localhost/
+
+#### 4. pgAdmin (Database Management)
+- **Imagen**: Custom (Dockerfile.pgadmin)
+- **Puerto**: 5050
+- **Rol**: Interfaz visual para PostgreSQL
+
+### Base de Datos - Schema
+
+#### Tabla: usuarios
+```sql
+├── id (PK, UUID)
+├── username (UNIQUE)
+├── email (UNIQUE)
+├── password (bcrypt)
+├── created_at
+└── updated_at
+```
+
+#### Tabla: medicamentos
+```sql
+├── id (PK, UUID)
+├── nombre
+├── descripcion
+├── dosis
+├── presentacion
+├── stock
+└── precio
+```
+
+#### Tabla: solicitud_medicamento
+```sql
+├── id (PK, UUID)
+├── usuario_id (FK → usuarios)
+├── medicamento_id (FK → medicamentos)
+├── cantidad_solicitada
+├── estado (PENDIENTE/APROBADO/RECHAZADO)
+├── fecha_solicitud
+└── observaciones
+```
+
+### Flujo de Autenticación JWT
+
+#### 1. Registro
+```
+POST /api/auth/register
+├── Body: { username, email, password, confirmPassword }
+├── Validación: password == confirmPassword
+├── Hash: bcrypt (fuerza 10)
+├── Response: { id, username, email, token }
+└── Token: JWT con expiración
+```
+
+#### 2. Login
+```
+POST /api/auth/login
+├── Body: { username, password }
+├── Validación: credenciales en BD
+├── Token JWT: { sub: username, exp: +24h, iat: now }
+├── Response: { token, username }
+└── Frontend: localStorage.setItem('token')
+```
+
+#### 3. Acceso a Recursos Protegidos
+```
+GET /api/medicamentos
+├── Header: Authorization: Bearer <JWT>
+├── Filtro: AuthTokenFilter extrae token
+├── Validación: JWT válido + no expirado
+├── Response: [medicamentos] o 401 Unauthorized
+└── Frontend: axios interceptor agrega header automáticamente
+```
+
+### Ciclo de Vida Startup
+
+1. **PostgreSQL** inicia y espera health check
+2. **pgAdmin** inicia cuando PostgreSQL está "healthy"
+3. **Backend** inicia cuando PostgreSQL está "healthy"
+   - Ejecuta migrations
+   - Conecta a BD
+   - Carga credenciales de seguridad
+4. **Frontend** inicia cuando Backend está disponible
+   - Build con Vite
+   - Nginx inicia con proxy hacia Backend
+5. **Toda la aplicación** está lista
 - **Makefile**: Automatización
 
 ---
