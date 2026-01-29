@@ -10,7 +10,6 @@
 -- ============================================================================
 -- Almacena información de los usuarios del sistema
 -- Incluye: id, username, password
--- Los roles se almacenan en la tabla usuario_roles (@ElementCollection)
 
 CREATE TABLE IF NOT EXISTS usuarios (
     id BIGSERIAL PRIMARY KEY,
@@ -86,40 +85,3 @@ VALUES
     ('Amoxicilina'),
     ('Metformina')
 ON CONFLICT DO NOTHING;
-
--- ============================================================================
--- COMENTARIOS Y DOCUMENTACIÓN
--- ============================================================================
---
--- ESTRUCTURA DE TABLAS (ALINEADAS CON ENTIDADES JPA)
--- 
--- USUARIOS: Almacena información básica de los usuarios
---   - id: Identificador único (BIGSERIAL)
---   - username: Nombre único del usuario (VARCHAR, UNIQUE)
---   - password: Contraseña hasheada con bcrypt (VARCHAR)
---
--- MEDICAMENTOS: Catálogo de medicamentos disponibles
---   - id: Identificador único (BIGSERIAL)
---   - nombre: Nombre del medicamento (VARCHAR)
---
--- SOLICITUDES_MEDICAMENTOS: Registro de solicitudes de medicamentos
---   - id: Identificador único (BIGSERIAL)
---   - medicamento_id: Referencia a medicamentos(id)
---   - usuario_id: Referencia a usuarios(id)
---   - numero_orden: Número de orden único (VARCHAR)
---   - direccion: Dirección de entrega (VARCHAR)
---   - telefono: Número de teléfono (VARCHAR)
---   - correo_electronico: Correo electrónico de contacto (VARCHAR)
---
--- RELACIONES
---   - Un usuario puede tener múltiples solicitudes (1:N)
---   - Un medicamento puede tener múltiples solicitudes (1:N)
---   - Eliminar un usuario elimina sus solicitudes (CASCADE)
---   - Eliminar un medicamento elimina sus solicitudes (CASCADE)
---
--- USUARIOS POR DEFECTO
---   - username: admin, password: admin (hash bcrypt)
---   - username: usuario_test, password: admin (hash bcrypt)
--- 
--- NOTA: No existen roles de usuario en este sistema
--- ============================================================================
