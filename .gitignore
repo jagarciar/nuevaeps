@@ -1,0 +1,38 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.env
+.env.local
+.env.*.local
+
+# Build
+target/
+dist/
+build/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Logs
+*.log
+
+# Misc
+.classpath
+.project
+.settings/
+*.iml
+
+# Subproyectos con repositorios propios
+nuevaeps-backend/
+nuevaeps-frontend/

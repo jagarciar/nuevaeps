@@ -1,0 +1,4 @@
+FROM dpage/pgadmin4:latest
+
+# Copiar el archivo de servidores
+COPY pgadmin-servers.json /pgadmin4/servers.json

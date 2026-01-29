@@ -1,0 +1,16 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "PostgreSQL NuevaEPS",
+      "Group": "Servers",
+      "Port": 5432,
+      "Username": "postgres",
+      "Host": "postgres",
+      "SSLMode": "prefer",
+      "MaintenanceDB": "postgres",
+      "PassFile": "/tmp/pgpass",
+      "DBRestrictionList": [],
+      "Comment": "Servidor PostgreSQL de NuevaEPS"
+    }
+  }
+}
