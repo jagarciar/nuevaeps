@@ -527,53 +527,7 @@ docker-compose exec postgres psql -U postgres -d nuevaeps_db
 
 El archivo `init-db.sql` se ejecuta automáticamente cuando se crea el contenedor de PostgreSQL por primera vez.
 
-### Tablas Creadas
-
-#### USUARIOS
-Almacena información de usuarios del sistema.
-
-**Campos principales:**
-- `id` - Identificador único
-- `username` - Nombre de usuario (único)
-- `email` - Correo electrónico (único)
-- `password` - Contraseña hasheada
-- `nombre_completo` - Nombre completo
-- `rol` - Rol (ADMIN, USER, MODERATOR)
-- `activo` - Estado del usuario
-- `fecha_creacion` - Fecha de creación
-- `fecha_actualizacion` - Última actualización
-
-#### MEDICAMENTOS
-Catálogo de medicamentos disponibles.
-
-**Campos principales:**
-- `id` - Identificador único
-- `nombre` - Nombre del medicamento
-- `descripcion` - Descripción detallada
-- `principio_activo` - Componente activo
-- `dosis` - Dosis recomendada
-- `presentacion` - Forma (tableta, cápsula, etc.)
-- `laboratorio` - Laboratorio fabricante
-- `codigo_referencia` - Código de inventario
-- `precio` - Precio unitario
-- `stock` - Cantidad disponible
-- `stock_minimo` - Umbral de alerta
-- `activo` - Disponibilidad
-
-#### SOLICITUDES
-Registro de solicitudes de medicamentos.
-
-**Campos principales:**
-- `id` - Identificador único
-- `usuario_id` - Referencia al usuario
-- `medicamento_id` - Referencia al medicamento
-- `cantidad_solicitada` - Cantidad
-- `estado` - Estado de la solicitud
-- `motivo` - Motivo de la solicitud
-- `diagnostico` - Diagnóstico médico
-- `fecha_solicitud` - Fecha de solicitud
-- `fecha_resolucion` - Fecha de resolución
-- `observaciones` - Comentarios
+Para detalles completos, consulta la sección anterior: **[Base de Datos - Schema](#base-de-datos---schema)** o el backend README.
 
 ### Conexión desde Host
 
