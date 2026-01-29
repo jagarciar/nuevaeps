@@ -555,47 +555,14 @@ npm run lint
 npm run build
 ```
 
-### Git Hooks - Pruebas Automáticas en Pre-Commit
+### Git Hooks
 
-El proyecto incluye un hook de Git que ejecuta automáticamente las pruebas del backend antes de cada commit. Esto asegura que solo se commitee código que pasa todas las pruebas.
+Cada repositorio (backend y frontend) tiene sus propios Git hooks configurados:
 
-#### Características
+- **Backend**: Hook pre-commit que ejecuta `mvn test` antes de cada commit
+- Ver [nuevaeps-backend/README.md](nuevaeps-backend/README.md) para instrucciones de instalación
 
-- ✅ Ejecuta `mvn test` automáticamente antes de cada commit
-- ✅ Aborta el commit si alguna prueba falla
-- ✅ Muestra mensajes claros sobre el resultado
-- ✅ Funciona en Windows, Linux y Mac
 
-#### Instalación del Hook (Primera vez)
-
-El hook ya está instalado en `.git/hooks/pre-commit`. Si necesitas reinstalarlo:
-
-**Windows:**
-```bash
-install-hooks.bat
-```
-
-**Linux/Mac:**
-```bash
-chmod +x hooks/pre-commit
-cp hooks/pre-commit .git/hooks/pre-commit
-```
-
-#### Cómo Funciona
-
-1. Haces un commit: `git commit -m "mensaje"`
-2. El hook ejecuta automáticamente las pruebas del backend
-3. Si las pruebas pasan ✅ → el commit se completa
-4. Si alguna prueba falla ❌ → el commit se aborta
-
-#### Saltar el Hook (No Recomendado)
-
-En casos excepcionales, puedes saltar el hook:
-```bash
-git commit -m "mensaje" --no-verify
-```
-
-⚠️ **No recomendado**: Solo úsalo si estás seguro de que tu código funciona.
 
 ### Acceder a Contenedores para Debugging
 
