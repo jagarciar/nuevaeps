@@ -62,8 +62,45 @@ CREATE INDEX IF NOT EXISTS idx_solicitudes_usuario ON solicitudes_medicamentos(u
 CREATE INDEX IF NOT EXISTS idx_solicitudes_numero_orden ON solicitudes_medicamentos(numero_orden);
 
 -- ============================================================================
+-- TABLA: ROLES
+-- ============================================================================
+-- Catálogo de roles del sistema
+-- Incluye: id, nombre
+
+CREATE TABLE IF NOT EXISTS roles (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- ============================================================================
+-- TABLA: USUARIO_ROLES (Tabla intermedia Many-to-Many)
+-- ============================================================================
+-- Relación entre usuarios y roles
+
+CREATE TABLE IF NOT EXISTS usuario_roles (
+    usuario_id BIGINT NOT NULL,
+    rol_id BIGINT NOT NULL,
+    PRIMARY KEY (usuario_id, rol_id),
+    CONSTRAINT fk_usuario_roles_usuario 
+        FOREIGN KEY (usuario_id) 
+        REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_usuario_roles_rol 
+        FOREIGN KEY (rol_id) 
+        REFERENCES roles(id) ON DELETE CASCADE
+);
+
+-- Índices para búsquedas rápidas
+CREATE INDEX IF NOT EXISTS idx_usuario_roles_usuario ON usuario_roles(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_usuario_roles_rol ON usuario_roles(rol_id);
+
+-- ============================================================================
 -- DATOS INICIALES
 -- ============================================================================
+
+-- Roles del Sistema
+INSERT INTO roles (nombre) VALUES ('USER') ON CONFLICT (nombre) DO NOTHING;
+INSERT INTO roles (nombre) VALUES ('ADMIN') ON CONFLICT (nombre) DO NOTHING;
+INSERT INTO roles (nombre) VALUES ('MODERATOR') ON CONFLICT (nombre) DO NOTHING;
 
 -- Usuario Administrador
 -- Contraseña: admin (hash bcrypt: $2a$10$dXJ3SW6G7P50eS4XW0JUXOUm8i8FGOy8sAWw3R.6yVl0vVnvVvI3y)
@@ -84,4 +121,29 @@ VALUES
     ('Ibuprofeno'),
     ('Amoxicilina'),
     ('Metformina')
+ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- ASIGNACIÓN DE ROLES A USUARIOS
+-- ============================================================================
+
+-- Asignar rol ADMIN al usuario admin
+INSERT INTO usuario_roles (usuario_id, rol_id)
+SELECT u.id, r.id 
+FROM usuarios u, roles r 
+WHERE u.username = 'admin' AND r.nombre = 'ADMIN'
+ON CONFLICT DO NOTHING;
+
+-- Asignar rol USER al usuario admin (también tiene permisos de usuario)
+INSERT INTO usuario_roles (usuario_id, rol_id)
+SELECT u.id, r.id 
+FROM usuarios u, roles r 
+WHERE u.username = 'admin' AND r.nombre = 'USER'
+ON CONFLICT DO NOTHING;
+
+-- Asignar rol USER al usuario de prueba
+INSERT INTO usuario_roles (usuario_id, rol_id)
+SELECT u.id, r.id 
+FROM usuarios u, roles r 
+WHERE u.username = 'usuario_test' AND r.nombre = 'USER'
 ON CONFLICT DO NOTHING;
