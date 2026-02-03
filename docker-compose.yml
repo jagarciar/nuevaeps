@@ -52,6 +52,8 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
     ports:
       - "8080:8080"
+    volumes:
+      - backend_logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,6 +90,8 @@ volumes:
   postgres_data:
     driver: local
   pgadmin_data:
+    driver: local
+  backend_logs:
     driver: local
 
 networks:

@@ -1,0 +1,23 @@
+1. mvn clean compile
+2. docker-compose up -d --build backend
+
+// Ver logs en el backend
+docker exec nuevaeps_backend ls -lh /app/logs/
+
+//Levantar
+docker-compose up -d pgadmin
+
+// Compilar backend
+mvn clean install (first time)
+mvn clean compile
+// Generar imagen de docker
+docker-compose build backend 
+docker-compose build  --no-cache
+// Subir imagen en compose
+docker-compose up -d backend
+mvn spring-boot:run
+// Eliminar todos los contenedores
+docker compose down -v
+// Eliminar imagenes y volumenes
+docker rmi $(docker images -q)
+docker volume prune -a

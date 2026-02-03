@@ -73,25 +73,25 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 -- ============================================================================
--- TABLA: USUARIO_ROLES (Tabla intermedia Many-to-Many)
+-- TABLA: USUARIOS_ROLES (Tabla intermedia Many-to-Many)
 -- ============================================================================
 -- Relación entre usuarios y roles
 
-CREATE TABLE IF NOT EXISTS usuario_roles (
+CREATE TABLE IF NOT EXISTS usuarios_roles (
     usuario_id BIGINT NOT NULL,
     rol_id BIGINT NOT NULL,
     PRIMARY KEY (usuario_id, rol_id),
-    CONSTRAINT fk_usuario_roles_usuario 
+    CONSTRAINT fk_usuarios_roles_usuario 
         FOREIGN KEY (usuario_id) 
         REFERENCES usuarios(id) ON DELETE CASCADE,
-    CONSTRAINT fk_usuario_roles_rol 
+    CONSTRAINT fk_usuarios_roles_rol 
         FOREIGN KEY (rol_id) 
         REFERENCES roles(id) ON DELETE CASCADE
 );
 
 -- Índices para búsquedas rápidas
-CREATE INDEX IF NOT EXISTS idx_usuario_roles_usuario ON usuario_roles(usuario_id);
-CREATE INDEX IF NOT EXISTS idx_usuario_roles_rol ON usuario_roles(rol_id);
+CREATE INDEX IF NOT EXISTS idx_usuarios_roles_usuario ON usuarios_roles(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_usuarios_roles_rol ON usuarios_roles(rol_id);
 
 -- ============================================================================
 -- DATOS INICIALES
@@ -128,21 +128,21 @@ ON CONFLICT DO NOTHING;
 -- ============================================================================
 
 -- Asignar rol ADMIN al usuario admin
-INSERT INTO usuario_roles (usuario_id, rol_id)
+INSERT INTO usuarios_roles (usuario_id, rol_id)
 SELECT u.id, r.id 
 FROM usuarios u, roles r 
 WHERE u.username = 'admin' AND r.nombre = 'ADMIN'
 ON CONFLICT DO NOTHING;
 
 -- Asignar rol USER al usuario admin (también tiene permisos de usuario)
-INSERT INTO usuario_roles (usuario_id, rol_id)
+INSERT INTO usuarios_roles (usuario_id, rol_id)
 SELECT u.id, r.id 
 FROM usuarios u, roles r 
 WHERE u.username = 'admin' AND r.nombre = 'USER'
 ON CONFLICT DO NOTHING;
 
 -- Asignar rol USER al usuario de prueba
-INSERT INTO usuario_roles (usuario_id, rol_id)
+INSERT INTO usuarios_roles (usuario_id, rol_id)
 SELECT u.id, r.id 
 FROM usuarios u, roles r 
 WHERE u.username = 'usuario_test' AND r.nombre = 'USER'
